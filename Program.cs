@@ -3,7 +3,7 @@ using MySql.Data.MySqlClient;
 
 namespace MainProgram
 {
-    class Program
+    public class Program
     {
         public static void InsertData(MySqlCommand cmd) {
             string prod_name = Inputs.GetString("Enter a product name: ");
@@ -18,28 +18,62 @@ namespace MainProgram
                 throw new Exception("Cannot execute query.");
             }
         }
-        public static int ReadData(List<string> prods, MySqlConnection con, MySqlCommand cmd) {
+
+        public static int ReadData(List<string> prods, List<int> quants, List<int> prices, MySqlConnection con, MySqlCommand cmd) {
             cmd.CommandText = @"SELECT * FROM PRODUCTS";
             using var submit = new MySqlCommand(cmd.CommandText, con);
 
             using MySqlDataReader rdr = cmd.ExecuteReader();
             while (rdr.Read()) {
                 string query_name = rdr.GetString(1);
-                prods.Add(query_name);
+                int query_quan = rdr.GetInt32(2);
+                int query_price = rdr.GetInt32(3);
+                if (prods.Count <= 0) prods.Add(query_name);
+                if (quants.Count <= 0) quants.Add(query_quan);
+                if (prices.Count <= 0) prices.Add(query_price);
             }
-            if (prods.Count() > 0) {
-                foreach (var names in prods) {
-                    Console.WriteLine(names);
+            if (prods.Count > 0) {
+                int i;
+                for (i = 1; i <= prods.Count; i++) {
+                    int bundle_price = prices[i-1] * quants[i-1];
+                    Console.WriteLine($"{i}. {prods[i-1]} - {quants[i-1]}pcs - ${bundle_price} total - ${prices[i-1]}/pc");
                 }
+                i = 0;
             } else {
                 Console.WriteLine("Database is empty.");
             }
-
-            return prods.Count();
+            Console.WriteLine($"Current Count: {prods.Count}");
+            return prods.Count;
         }
+        
+        public static void Choose(List<string> prods, List<int> quants, List<int> prices, MySqlConnection con, MySqlCommand cmd) 
+        {
+            Console.WriteLine("Select an option:\n\t0. Exit\n\t1. Insert Data\n\t2. Read Data");
+            int choice = Inputs.GetInt("Choice: ");
+            
+            if (choice == 0) 
+            {
+                Console.WriteLine("Thank You!");
+            } else if (choice == 1)
+            {
+                InsertData(cmd);
+                Choose(prods, quants, prices, con, cmd);
+            } else if (choice == 2)
+            {
+                ReadData(prods, quants, prices, con, cmd);
+                Choose(prods, quants, prices, con, cmd);
+            } else
+            {
+                Console.WriteLine("Invalid Choice!");
+                Choose(prods, quants, prices, con, cmd);
+            }
+        }
+        
         public static void Main(string[] args) 
         {
             List<string> prods = new List<string>();
+            List<int> quants = new List<int>();
+            List<int> prices = new List<int>();
             string cs = @"server=localhost;userid=root;password='';database=csharp_test";
             using var con = new MySqlConnection(cs);
             
@@ -51,7 +85,6 @@ namespace MainProgram
             {
                 throw new Exception("Cannot connect to MySQL");
             }
-
             using var cmd = new MySqlCommand();
             cmd.Connection = con;
 
@@ -62,11 +95,8 @@ namespace MainProgram
                 throw new Exception("Cannot execute MySQL Query.");
             }
             
-            /*InsertData(cmd);*/
-            if (ReadData(prods, con, cmd) <= 0) {
-                InsertData(cmd);
-            }
-            
+            Console.WriteLine("Welcome to MySQL Testing!");
+            Choose(prods, quants, prices, con, cmd);
         }
     }
 }
