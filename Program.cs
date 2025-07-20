@@ -23,7 +23,7 @@ namespace MainProgram
             int price = Inputs.GetInt($"Enter the starting price for the product `{prod_name}`: ");
 
             cmd.CommandText = @$"INSERT INTO products(name, quan, price) VALUES('{prod_name}', {quantity}, {price})";
-            if (cmd.ExecuteNonQuery() > 0)
+            if (cmd.ExecuteNonQuery() >= 0)
             {
                 Console.WriteLine("Insert Executed");
             }
@@ -82,6 +82,9 @@ namespace MainProgram
             {
                 InsertData(cmd);
                 Choose(prods, quants, prices, con, cmd);
+                prods.Clear();
+                quants.Clear();
+                prices.Clear();
             }
             else if (choice == 2)
             {
